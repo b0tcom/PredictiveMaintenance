@@ -667,9 +667,13 @@ def show_downloads(processed_data, equipment_data):
             return f.read()
             
         def generate_xlsx():
-            """Generate Excel report"""
-            # Get data
-            df = get_enhanced_equipment_df()
+            """Generate comprehensive Excel report with data from all components"""
+            # Get all the data we need
+            equipment_df = get_enhanced_equipment_df()
+            sensor_data = get_sensor_data_summary()
+            anomaly_data = get_anomaly_data()
+            metrics_data = get_performance_metrics()
+            historical_data = get_historical_trends()
             
             # Create an in-memory output file
             output = io.BytesIO()
@@ -697,18 +701,53 @@ def show_downloads(processed_data, equipment_data):
                 'border': 1
             })
             
+            # Add Executive Summary worksheet
+            ws_summary = workbook.add_worksheet("Executive Summary")
+            
+            # Add title and report information
+            ws_summary.merge_range('A1:D1', f"SmartMaintain - {report_type}", title_format)
+            ws_summary.merge_range('A2:D2', f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", workbook.add_format({'align': 'center'}))
+            ws_summary.merge_range('A3:D3', f"Time Period: {time_period}", workbook.add_format({'align': 'center'}))
+            
+            # Calculate summary statistics
+            critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
+            warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            normal_count = len(equipment_df) - critical_count - warning_count
+            
+            # Add summary metrics
+            ws_summary.write(5, 0, "Key Metrics", workbook.add_format({'bold': True, 'font_size': 14}))
+            
+            summary_data = [
+                ["Total Equipment", len(equipment_df)],
+                ["Critical Maintenance Alerts", critical_count],
+                ["Warning Maintenance Alerts", warning_count],
+                ["Normal Status", normal_count],
+                ["Detected Anomalies", anomaly_count]
+            ]
+            
+            # Add performance metrics if available
+            if not metrics_data.empty:
+                avg_health = metrics_data['overall_health'].str.rstrip('%').astype(float).mean()
+                avg_oee = metrics_data['oee'].str.rstrip('%').astype(float).mean()
+                summary_data.append(["Average Equipment Health", f"{avg_health:.1f}%"])
+                summary_data.append(["Average OEE", f"{avg_oee:.1f}%"])
+            
+            # Write summary data
+            for row_idx, (label, value) in enumerate(summary_data):
+                ws_summary.write(row_idx + 7, 0, label, workbook.add_format({'bold': True}))
+                ws_summary.write(row_idx + 7, 1, value)
+            
             # Equipment summary worksheet
-            ws_equipment = workbook.add_worksheet("Equipment Summary")
+            ws_equipment = workbook.add_worksheet("Equipment Status")
             
             # Add title
-            ws_equipment.merge_range('A1:G1', f"SmartMaintain - {report_type}", title_format)
-            ws_equipment.merge_range('A2:G2', f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", workbook.add_format({'align': 'center'}))
-            ws_equipment.merge_range('A3:G3', f"Time Period: {time_period}", workbook.add_format({'align': 'center'}))
+            ws_equipment.merge_range('A1:G1', "Equipment Status Summary", title_format)
             
             # Add table headers
             headers = ["Machine ID", "Type", "Status", "Failure Probability", "Days to Failure", "Urgency", "Recommendation"]
             for col, header in enumerate(headers):
-                ws_equipment.write(4, col, header, header_format)
+                ws_equipment.write(3, col, header, header_format)
                 
             # Set column widths
             ws_equipment.set_column('A:A', 12)
@@ -720,36 +759,178 @@ def show_downloads(processed_data, equipment_data):
             ws_equipment.set_column('G:G', 50)
             
             # Add data rows
-            for row_idx, (_, data_row) in enumerate(df.iterrows()):
-                ws_equipment.write(row_idx + 5, 0, str(data_row['machine_id']), cell_format)
-                ws_equipment.write(row_idx + 5, 1, str(data_row['machine_type']), cell_format)
-                ws_equipment.write(row_idx + 5, 2, str(data_row['status']), cell_format)
-                ws_equipment.write(row_idx + 5, 3, str(data_row.get('failure_probability', 'N/A')), cell_format)
-                ws_equipment.write(row_idx + 5, 4, str(data_row.get('days_to_failure', 'N/A')), cell_format)
-                ws_equipment.write(row_idx + 5, 5, str(data_row.get('maintenance_urgency', 'Unknown')), cell_format)
-                ws_equipment.write(row_idx + 5, 6, str(data_row.get('recommendation', 'No recommendation')), cell_format)
+            for row_idx, (_, data_row) in enumerate(equipment_df.iterrows()):
+                ws_equipment.write(row_idx + 4, 0, str(data_row['machine_id']), cell_format)
+                ws_equipment.write(row_idx + 4, 1, str(data_row['machine_type']), cell_format)
+                ws_equipment.write(row_idx + 4, 2, str(data_row['status']), cell_format)
+                ws_equipment.write(row_idx + 4, 3, str(data_row.get('failure_probability', 'N/A')), cell_format)
+                ws_equipment.write(row_idx + 4, 4, str(data_row.get('days_to_failure', 'N/A')), cell_format)
+                ws_equipment.write(row_idx + 4, 5, str(data_row.get('maintenance_urgency', 'Unknown')), cell_format)
+                ws_equipment.write(row_idx + 4, 6, str(data_row.get('recommendation', 'No recommendation')), cell_format)
             
-            # Statistics worksheet
-            ws_stats = workbook.add_worksheet("Statistics")
+            # Critical Issues worksheet
+            ws_critical = workbook.add_worksheet("Critical Issues")
             
             # Add title
-            ws_stats.merge_range('A1:C1', "System Statistics", title_format)
+            ws_critical.merge_range('A1:D1', "Critical Maintenance Issues", title_format)
             
-            critical_count = len([r for _, r in df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
-            warning_count = len([r for _, r in df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            normal_count = len(df) - critical_count - warning_count
+            # Add critical machines section
+            critical_machines = equipment_df[equipment_df['maintenance_urgency'] == 'Immediate']
             
-            # Add statistics
-            stats = [
-                ["Total Equipment", len(df)],
-                ["Critical Alerts", critical_count],
-                ["Warning Alerts", warning_count],
-                ["Normal Status", normal_count]
-            ]
+            if len(critical_machines) > 0:
+                ws_critical.write(3, 0, "Machines Requiring Immediate Attention:", workbook.add_format({'bold': True, 'font_size': 12}))
+                
+                # Add critical machine headers
+                critical_headers = ["Machine ID", "Type", "Failure Probability", "Days to Failure", "Recommendation"]
+                for col, header in enumerate(critical_headers):
+                    ws_critical.write(5, col, header, header_format)
+                
+                # Add critical machines data
+                for row_idx, (_, data_row) in enumerate(critical_machines.iterrows()):
+                    ws_critical.write(row_idx + 6, 0, str(data_row['machine_id']), cell_format)
+                    ws_critical.write(row_idx + 6, 1, str(data_row['machine_type']), cell_format)
+                    ws_critical.write(row_idx + 6, 2, str(data_row.get('failure_probability', 'N/A')), cell_format)
+                    ws_critical.write(row_idx + 6, 3, str(data_row.get('days_to_failure', 'N/A')), cell_format)
+                    ws_critical.write(row_idx + 6, 4, str(data_row.get('recommendation', 'No recommendation')), cell_format)
+            else:
+                ws_critical.write(3, 0, "No machines require immediate attention.", workbook.add_format({'italic': True}))
             
-            for row_idx, (label, value) in enumerate(stats):
-                ws_stats.write(row_idx + 3, 0, label, workbook.add_format({'bold': True}))
-                ws_stats.write(row_idx + 3, 1, value)
+            # Add anomalies section if available
+            if not anomaly_data.empty:
+                severe_anomalies = anomaly_data[anomaly_data['severity'] == 'High']
+                
+                row_offset = 8 + (len(critical_machines) if len(critical_machines) > 0 else 0)
+                
+                ws_critical.write(row_offset, 0, "Significant Anomalies Detected:", workbook.add_format({'bold': True, 'font_size': 12}))
+                
+                if len(severe_anomalies) > 0:
+                    # Add anomaly headers
+                    anomaly_headers = ["Machine ID", "Anomaly Score", "Affected Sensors", "Severity", "Detected At"]
+                    for col, header in enumerate(anomaly_headers):
+                        ws_critical.write(row_offset + 2, col, header, header_format)
+                    
+                    # Add anomaly data
+                    for row_idx, (_, data_row) in enumerate(severe_anomalies.iterrows()):
+                        ws_critical.write(row_offset + 3 + row_idx, 0, str(data_row['machine_id']), cell_format)
+                        ws_critical.write(row_offset + 3 + row_idx, 1, str(data_row['anomaly_score']), cell_format)
+                        ws_critical.write(row_offset + 3 + row_idx, 2, str(data_row['affected_sensors']), cell_format)
+                        ws_critical.write(row_offset + 3 + row_idx, 3, str(data_row['severity']), cell_format)
+                        ws_critical.write(row_offset + 3 + row_idx, 4, str(data_row.get('detected_at', 'Unknown')), cell_format)
+                else:
+                    ws_critical.write(row_offset + 2, 0, "No significant anomalies detected.", workbook.add_format({'italic': True}))
+            
+            # Performance Metrics worksheet
+            if not metrics_data.empty:
+                ws_metrics = workbook.add_worksheet("Performance Metrics")
+                
+                # Add title
+                ws_metrics.merge_range('A1:G1', "Equipment Performance Metrics", title_format)
+                
+                # Add metrics table headers
+                metrics_headers = ["Machine ID", "Overall Health", "OEE", "Availability", "Performance", "Quality", "Power Usage"]
+                for col, header in enumerate(metrics_headers):
+                    ws_metrics.write(3, col, header, header_format)
+                
+                # Set column widths
+                for col in range(len(metrics_headers)):
+                    ws_metrics.set_column(col, col, 15)
+                
+                # Add metrics data rows
+                for row_idx, (_, data_row) in enumerate(metrics_data.iterrows()):
+                    ws_metrics.write(row_idx + 4, 0, str(data_row['machine_id']), cell_format)
+                    ws_metrics.write(row_idx + 4, 1, str(data_row['overall_health']), cell_format)
+                    ws_metrics.write(row_idx + 4, 2, str(data_row['oee']), cell_format)
+                    ws_metrics.write(row_idx + 4, 3, str(data_row['availability']), cell_format)
+                    ws_metrics.write(row_idx + 4, 4, str(data_row['performance']), cell_format)
+                    ws_metrics.write(row_idx + 4, 5, str(data_row['quality']), cell_format)
+                    ws_metrics.write(row_idx + 4, 6, str(data_row['power_usage']), cell_format)
+            
+            # Sensor Data worksheet if available
+            if not sensor_data.empty:
+                ws_sensors = workbook.add_worksheet("Sensor Readings")
+                
+                # Add title
+                ws_sensors.merge_range('A1:E1', "Latest Sensor Readings", title_format)
+                
+                # Add sensor data table headers
+                sensor_headers = ["Machine ID", "Timestamp", "Temperature (°C)", "Vibration (mm/s)", "Power (%)"]
+                for col, header in enumerate(sensor_headers):
+                    ws_sensors.write(3, col, header, header_format)
+                
+                # Set column widths
+                ws_sensors.set_column('A:A', 12)
+                ws_sensors.set_column('B:B', 20)
+                ws_sensors.set_column('C:E', 15)
+                
+                # Add sensor data rows
+                for row_idx, (_, data_row) in enumerate(sensor_data.iterrows()):
+                    ws_sensors.write(row_idx + 4, 0, str(data_row['machine_id']), cell_format)
+                    ws_sensors.write(row_idx + 4, 1, str(data_row.get('timestamp', 'Unknown')), cell_format)
+                    
+                    # Format numeric values properly
+                    temp_value = data_row.get('temperature', None)
+                    if temp_value is not None:
+                        ws_sensors.write(row_idx + 4, 2, float(temp_value), workbook.add_format({'border': 1, 'num_format': '0.0'}))
+                    else:
+                        ws_sensors.write(row_idx + 4, 2, 'N/A', cell_format)
+                        
+                    vib_value = data_row.get('vibration', None)
+                    if vib_value is not None:
+                        ws_sensors.write(row_idx + 4, 3, float(vib_value), workbook.add_format({'border': 1, 'num_format': '0.00'}))
+                    else:
+                        ws_sensors.write(row_idx + 4, 3, 'N/A', cell_format)
+                        
+                    power_value = data_row.get('power', None)
+                    if power_value is not None:
+                        ws_sensors.write(row_idx + 4, 4, float(power_value), workbook.add_format({'border': 1, 'num_format': '0.0'}))
+                    else:
+                        ws_sensors.write(row_idx + 4, 4, 'N/A', cell_format)
+            
+            # Historical Data worksheet if available
+            if not historical_data.empty:
+                ws_historical = workbook.add_worksheet("Historical Trends")
+                
+                # Add title
+                ws_historical.merge_range('A1:E1', "Historical Sensor Data Trends", title_format)
+                
+                # Add historical data table headers - first filter to essential columns
+                if 'date' in historical_data.columns:
+                    trend_columns = ['date', 'machine_id', 'temperature', 'vibration', 'power']
+                    trend_headers = ["Date", "Machine ID", "Avg. Temperature (°C)", "Avg. Vibration (mm/s)", "Avg. Power (%)"]
+                    
+                    # Filter columns that exist in the dataframe
+                    available_columns = [col for col in trend_columns if col in historical_data.columns]
+                    header_indices = [trend_columns.index(col) for col in available_columns]
+                    available_headers = [trend_headers[i] for i in header_indices]
+                    
+                    # Add headers
+                    for col, header in enumerate(available_headers):
+                        ws_historical.write(3, col, header, header_format)
+                    
+                    # Set column widths
+                    ws_historical.set_column('A:A', 15)  # Date
+                    ws_historical.set_column('B:B', 12)  # Machine ID
+                    ws_historical.set_column('C:E', 18)  # Metrics
+                    
+                    # Add historical data rows
+                    for row_idx, data_row in enumerate(historical_data.iterrows()):
+                        _, row = data_row
+                        
+                        # Write each column if it exists
+                        col_idx = 0
+                        for col_name in available_columns:
+                            if col_name == 'date':
+                                ws_historical.write(row_idx + 4, col_idx, str(row[col_name]), cell_format)
+                            elif col_name == 'machine_id':
+                                ws_historical.write(row_idx + 4, col_idx, str(row[col_name]), cell_format)
+                            elif col_name in row and not pd.isna(row[col_name]):
+                                num_format = {'border': 1, 'num_format': '0.00' if col_name == 'vibration' else '0.0'}
+                                ws_historical.write(row_idx + 4, col_idx, float(row[col_name]), workbook.add_format(num_format))
+                            else:
+                                ws_historical.write(row_idx + 4, col_idx, 'N/A', cell_format)
+                            col_idx += 1
+                else:
+                    ws_historical.write(3, 0, "Historical trend data is not in the expected format.", workbook.add_format({'italic': True}))
             
             # Close workbook
             workbook.close()
@@ -759,33 +940,78 @@ def show_downloads(processed_data, equipment_data):
             return output.getvalue()
             
         def generate_image():
-            """Generate a JPG image report (chart)"""
-            # Create a white background image
-            width, height = 1000, 800
+            """Generate a comprehensive JPG image report with data from all components"""
+            # Get all the data we need
+            equipment_df = get_enhanced_equipment_df()
+            sensor_data = get_sensor_data_summary()
+            anomaly_data = get_anomaly_data()
+            metrics_data = get_performance_metrics()
+            
+            # Create a white background image - make it larger for more content
+            width, height = 1200, 1600  # Taller image to fit more content
             img = Image.new('RGB', (width, height), color='white')
             draw = ImageDraw.Draw(img)
             
             # Try to load a font, use default if not available
             try:
-                title_font = ImageFont.truetype("Arial", 30)
-                header_font = ImageFont.truetype("Arial", 24)
+                title_font = ImageFont.truetype("Arial", 36)
+                header_font = ImageFont.truetype("Arial", 28)
+                subheader_font = ImageFont.truetype("Arial", 24)
                 normal_font = ImageFont.truetype("Arial", 18)
+                small_font = ImageFont.truetype("Arial", 14)
             except IOError:
                 title_font = ImageFont.load_default()
                 header_font = ImageFont.load_default()
+                subheader_font = header_font
                 normal_font = ImageFont.load_default()
+                small_font = normal_font
             
-            # Add title
+            # Add title and header information
             title = f"SmartMaintain - {report_type}"
-            draw.text((width//2 - 200, 30), title, fill="black", font=title_font)
-            draw.text((width//2 - 150, 70), f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", fill="black", font=normal_font)
-            draw.text((width//2 - 100, 100), f"Time Period: {time_period}", fill="black", font=normal_font)
+            draw.text((width//2 - 250, 30), title, fill="black", font=title_font)
+            draw.text((width//2 - 200, 80), f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", fill="black", font=normal_font)
+            draw.text((width//2 - 100, 110), f"Time Period: {time_period}", fill="black", font=normal_font)
             
             # Draw a line below the header
-            draw.line([(50, 140), (width-50, 140)], fill="black", width=2)
+            draw.line([(50, 150), (width-50, 150)], fill="black", width=3)
             
-            # Get data for visualization
-            df = get_enhanced_equipment_df()
+            # EXECUTIVE SUMMARY SECTION
+            current_y = 180
+            draw.text((50, current_y), "EXECUTIVE SUMMARY", fill="black", font=header_font)
+            current_y += 50
+            
+            # Calculate summary statistics
+            critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
+            warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            
+            # Draw key metrics
+            draw.text((70, current_y), f"• Total Equipment: {len(equipment_df)}", fill="black", font=normal_font)
+            current_y += 30
+            draw.text((70, current_y), f"• Critical Maintenance Alerts: {critical_count}", fill=(255, 0, 0), font=normal_font)
+            current_y += 30
+            draw.text((70, current_y), f"• Warning Maintenance Alerts: {warning_count}", fill=(255, 165, 0), font=normal_font)
+            current_y += 30
+            draw.text((70, current_y), f"• Detected Anomalies: {anomaly_count}", fill="black", font=normal_font)
+            current_y += 40
+            
+            # Add key performance metrics if available
+            if not metrics_data.empty:
+                try:
+                    avg_health = metrics_data['overall_health'].str.rstrip('%').astype(float).mean()
+                    avg_oee = metrics_data['oee'].str.rstrip('%').astype(float).mean()
+                    
+                    draw.text((70, current_y), f"• Average Equipment Health: {avg_health:.1f}%", fill="black", font=normal_font)
+                    current_y += 30
+                    draw.text((70, current_y), f"• Average OEE: {avg_oee:.1f}%", fill="black", font=normal_font)
+                    current_y += 40
+                except Exception:
+                    # Handle cases where metrics might be in a different format
+                    pass
+            
+            # MAINTENANCE DISTRIBUTION CHART
+            draw.text((50, current_y), "MAINTENANCE URGENCY DISTRIBUTION", fill="black", font=header_font)
+            current_y += 50
             
             # Count machines by urgency
             urgency_counts = {
@@ -795,15 +1021,12 @@ def show_downloads(processed_data, equipment_data):
                 'Normal': 0
             }
             
-            for _, row in df.iterrows():
+            for _, row in equipment_df.iterrows():
                 urgency = row.get('maintenance_urgency', 'Unknown')
                 if urgency in urgency_counts:
                     urgency_counts[urgency] += 1
-                    
-            # Draw chart title
-            draw.text((50, 170), "Maintenance Urgency Distribution", fill="black", font=header_font)
             
-            # Draw a simple bar chart
+            # Colors for different urgency levels
             colors = {
                 'Immediate': (255, 0, 0),      # Red
                 'Soon': (255, 165, 0),         # Orange
@@ -814,11 +1037,12 @@ def show_downloads(processed_data, equipment_data):
             # Calculate the maximum value for scaling
             max_value = max(urgency_counts.values()) if urgency_counts.values() else 1
             
-            bar_width = 100
-            bar_spacing = 50
-            bar_height_scale = 300 / max_value  # Scale bars to fit in 300px height
-            bar_start_x = 100
-            bar_base_y = 500
+            # Bar chart dimensions
+            bar_width = 120
+            bar_spacing = 60
+            bar_height_scale = 200 / max_value  # Scale bars to fit in 200px height
+            bar_start_x = 150
+            bar_base_y = current_y + 250
             
             # Draw bars
             x = bar_start_x
@@ -828,45 +1052,131 @@ def show_downloads(processed_data, equipment_data):
                 # Draw the bar
                 draw.rectangle(
                     [(x, bar_base_y - bar_height), (x + bar_width, bar_base_y)],
-                    fill=colors.get(category, (200, 200, 200))
+                    fill=colors.get(category, (200, 200, 200)),
+                    outline=(0, 0, 0)  # Black outline
                 )
                 
-                # Add the category label
-                draw.text((x + 10, bar_base_y + 10), category, fill="black", font=normal_font)
+                # Draw the category label
+                draw.text((x + bar_width//2 - 35, bar_base_y + 10), category, fill="black", font=normal_font)
                 
-                # Add the value on top of the bar
-                draw.text((x + 30, bar_base_y - bar_height - 25), str(count), fill="black", font=normal_font)
+                # Draw the count on top of the bar
+                draw.text((x + bar_width//2 - 10, bar_base_y - bar_height - 25), str(count), fill="black", font=normal_font)
                 
                 x += bar_width + bar_spacing
             
             # Draw a horizontal line at the base of the bars
-            draw.line([(50, bar_base_y), (width-50, bar_base_y)], fill="black", width=2)
+            draw.line([(100, bar_base_y), (width-100, bar_base_y)], fill="black", width=2)
             
-            # Add a legend for the chart
-            legend_x = 650
-            legend_y = 250
-            for i, (category, color) in enumerate(colors.items()):
-                # Draw color box
-                draw.rectangle(
-                    [(legend_x, legend_y + i*30), (legend_x + 20, legend_y + i*30 + 20)],
-                    fill=color
-                )
-                # Draw text
-                draw.text((legend_x + 30, legend_y + i*30), category, fill="black", font=normal_font)
+            # Update current position after chart
+            current_y = bar_base_y + 60
             
-            # Add some additional statistics
-            stats_y = 600
-            draw.text((50, stats_y), "System Statistics:", fill="black", font=header_font)
-            draw.text((50, stats_y + 40), f"Total Equipment: {len(df)}", fill="black", font=normal_font)
-            draw.text((50, stats_y + 70), f"Machines Requiring Attention: {urgency_counts['Immediate'] + urgency_counts['Soon']}", fill="black", font=normal_font)
-            draw.text((50, stats_y + 100), f"Healthy Machines: {urgency_counts['Normal']}", fill="black", font=normal_font)
+            # CRITICAL ISSUES SECTION
+            draw.text((50, current_y), "CRITICAL ISSUES", fill="black", font=header_font)
+            current_y += 50
             
-            # Convert the image to bytes
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='JPEG')
-            img_byte_arr.seek(0)
+            # List machines with immediate maintenance needs
+            critical_machines = equipment_df[equipment_df['maintenance_urgency'] == 'Immediate']
             
-            return img_byte_arr.getvalue()
+            if len(critical_machines) > 0:
+                for idx, (_, row) in enumerate(critical_machines.iterrows()):
+                    if idx >= 3:  # Only show first 3 to avoid overcrowding
+                        draw.text((70, current_y), "... more critical machines ...", fill="black", font=normal_font)
+                        current_y += 30
+                        break
+                        
+                    machine_text = f"{row['machine_id']} ({row['machine_type']}): {row.get('failure_probability', 'N/A')} failure prob."
+                    draw.text((70, current_y), f"• {machine_text}", fill=(255, 0, 0), font=normal_font)
+                    current_y += 30
+            else:
+                draw.text((70, current_y), "No machines require immediate attention", fill="black", font=normal_font)
+                current_y += 30
+            
+            # Add some space
+            current_y += 20
+            
+            # ANOMALY DETECTION SECTION
+            draw.text((50, current_y), "ANOMALY DETECTION", fill="black", font=header_font)
+            current_y += 50
+            
+            # Show anomalies if any
+            if not anomaly_data.empty:
+                severe_anomalies = anomaly_data[anomaly_data['severity'] == 'High']
+                if len(severe_anomalies) > 0:
+                    for idx, (_, row) in enumerate(severe_anomalies.iterrows()):
+                        if idx >= 3:  # Only show first 3
+                            draw.text((70, current_y), "... more anomalies detected ...", fill="black", font=normal_font)
+                            current_y += 30
+                            break
+                            
+                        anomaly_text = f"{row['machine_id']}: Score {row['anomaly_score']}, {row['affected_sensors']}"
+                        draw.text((70, current_y), f"• {anomaly_text}", fill=(255, 0, 0), font=normal_font)
+                        current_y += 30
+                else:
+                    draw.text((70, current_y), "No significant anomalies detected", fill="black", font=normal_font)
+                    current_y += 30
+            
+            # Add some space
+            current_y += 20
+            
+            # SENSOR READINGS SECTION
+            draw.text((50, current_y), "LATEST SENSOR READINGS", fill="black", font=header_font)
+            current_y += 50
+            
+            # Show some sensor data if available
+            if not sensor_data.empty:
+                # Table headers
+                header_x = [70, 200, 350, 500, 650]
+                headers = ["Machine ID", "Time", "Temperature", "Vibration", "Power"]
+                
+                # Draw header row
+                for i, header in enumerate(headers):
+                    draw.text((header_x[i], current_y), header, fill="black", font=subheader_font)
+                
+                current_y += 40
+                
+                # Draw separator line
+                draw.line([(70, current_y - 10), (800, current_y - 10)], fill="black", width=1)
+                
+                # Show a few rows of data
+                rows_to_show = min(3, len(sensor_data))
+                for i in range(rows_to_show):
+                    row = sensor_data.iloc[i]
+                    
+                    # Extract and format data
+                    machine_id = str(row['machine_id'])
+                    timestamp = str(row.get('timestamp', 'Unknown'))
+                    if len(timestamp) > 16:  # Truncate timestamp if too long
+                        timestamp = timestamp[:16]
+                    
+                    temp = f"{row.get('temperature', 0):.1f}°C"
+                    vibration = f"{row.get('vibration', 0):.2f} mm/s" 
+                    power = f"{row.get('power', 0):.1f}%"
+                    
+                    # Draw row data
+                    draw.text((header_x[0], current_y), machine_id, fill="black", font=normal_font)
+                    draw.text((header_x[1], current_y), timestamp, fill="black", font=normal_font)
+                    draw.text((header_x[2], current_y), temp, fill="black", font=normal_font)
+                    draw.text((header_x[3], current_y), vibration, fill="black", font=normal_font)
+                    draw.text((header_x[4], current_y), power, fill="black", font=normal_font)
+                    
+                    current_y += 30
+                
+                if len(sensor_data) > 3:
+                    draw.text((70, current_y), "... more sensor readings available ...", fill="black", font=normal_font)
+                    current_y += 30
+            
+            # Add footer with disclaimer
+            footer_y = height - 50
+            draw.line([(50, footer_y - 20), (width-50, footer_y - 20)], fill="black", width=2)
+            draw.text((width//2 - 300, footer_y), 
+                      "For comprehensive data and analysis, please download the full report package", 
+                      fill="black", font=small_font)
+            
+            # Convert to bytes
+            img_byte_array = io.BytesIO()
+            img.save(img_byte_array, format='JPEG', quality=95)
+            img_byte_array.seek(0)
+            return img_byte_array.getvalue()
         
         # Generate the appropriate file based on selected format
         mime_types = {

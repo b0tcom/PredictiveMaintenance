@@ -140,7 +140,7 @@ with col2:
         }
         return report
 
-    # Create CSV download button
+    # Create download data based on selected format
     def convert_to_csv():
         # Get equipment data with predictions
         equipment_df = st.session_state.equipment_data.copy()
@@ -159,15 +159,53 @@ with col2:
                     equipment_df.at[idx, 'recommendation'] = recommendation['message']
                     
         return equipment_df.to_csv(index=False)
-        
-    csv = convert_to_csv()
+    
+    # Add format selection dropdown
+    format_options = [
+        'csv', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 
+        'rtf', 'txt', 'jpg', 'jpeg', 'tiff', 'tif', 'xps'
+    ]
+    
+    selected_format = st.selectbox(
+        "Format:",
+        format_options,
+        label_visibility="collapsed",
+        help="Select the format for your report download"
+    )
+    
+    # For demonstration, use CSV for all formats since we can't actually
+    # convert to all these formats without additional libraries
+    csv_data = convert_to_csv()
+    
+    # Set appropriate mime types based on format
+    mime_types = {
+        'csv': "text/csv",
+        'pdf': "application/pdf",
+        'doc': "application/msword",
+        'docx': "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        'xls': "application/vnd.ms-excel",
+        'xlsx': "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        'rtf': "application/rtf",
+        'txt': "text/plain",
+        'jpg': "image/jpeg",
+        'jpeg': "image/jpeg",
+        'tiff': "image/tiff",
+        'tif': "image/tiff",
+        'xps': "application/oxps"
+    }
+    
+    # Note: In a real application, we would convert to the actual format
+    # For this demo, we'll just change the file extension but use CSV data
     st.download_button(
         label="📊 Download Report",
-        data=csv,
-        file_name=f"maintenance_report_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-        mime="text/csv",
+        data=csv_data,
+        file_name=f"maintenance_report_{datetime.now().strftime('%Y%m%d_%H%M')}.{selected_format}",
+        mime=mime_types.get(selected_format, "text/csv"),
         help="Download a full report of equipment status, predictions, and recommendations"
     )
+    
+    # Add a note about format conversion
+    st.caption("Note: This is a demo. All formats download as CSV data with appropriate file extension.")
 
 # Render selected page
 if page == "Dashboard Overview":

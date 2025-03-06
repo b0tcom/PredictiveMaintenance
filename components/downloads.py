@@ -109,12 +109,15 @@ def show_downloads(processed_data, equipment_data):
             anomaly_data = []
             
             for machine_id, anomaly_info in processed_data['anomalies'].items():
+                # Check if keys exist and provide default values if not
                 row = {
                     'machine_id': machine_id,
-                    'has_anomalies': anomaly_info['has_anomalies'],
-                    'anomaly_score': f"{anomaly_info['anomaly_score']:.3f}",
-                    'affected_sensors': ', '.join(anomaly_info['affected_sensors']),
-                    'severity': anomaly_info['severity'],
+                    # Use .get() to provide default values if keys don't exist
+                    'anomaly_detected': anomaly_info.get('has_anomalies', 
+                                         anomaly_info.get('detected', False)),
+                    'anomaly_score': f"{anomaly_info.get('anomaly_score', 0.0):.3f}",
+                    'affected_sensors': ', '.join(anomaly_info.get('affected_sensors', [])),
+                    'severity': anomaly_info.get('severity', 'Unknown'),
                     'detected_at': anomaly_info.get('detected_at', 'Unknown')
                 }
                 anomaly_data.append(row)
@@ -230,7 +233,7 @@ def show_downloads(processed_data, equipment_data):
             # Add executive summary
             critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
             warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['anomaly_detected'] == True])
             
             report.append(f"Total Equipment: {len(equipment_df)}")
             report.append(f"Critical Maintenance Alerts: {critical_count}")
@@ -346,7 +349,7 @@ def show_downloads(processed_data, equipment_data):
             # Calculate summary statistics
             critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
             warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['anomaly_detected'] == True])
             
             # Add executive summary in bullet points
             pdf.set_font("Arial", "", 10)
@@ -491,7 +494,7 @@ def show_downloads(processed_data, equipment_data):
             # Calculate summary statistics
             critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
             warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['anomaly_detected'] == True])
             
             # Add executive summary in bullet points
             summary = doc.add_paragraph()
@@ -712,7 +715,7 @@ def show_downloads(processed_data, equipment_data):
             # Calculate summary statistics
             critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
             warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['anomaly_detected'] == True])
             normal_count = len(equipment_df) - critical_count - warning_count
             
             # Add summary metrics
@@ -983,7 +986,7 @@ def show_downloads(processed_data, equipment_data):
             # Calculate summary statistics
             critical_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Immediate'])
             warning_count = len([r for _, r in equipment_df.iterrows() if 'maintenance_urgency' in r and r['maintenance_urgency'] == 'Soon'])
-            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['has_anomalies'] == True])
+            anomaly_count = len([r for _, r in anomaly_data.iterrows() if r['anomaly_detected'] == True])
             
             # Draw key metrics
             draw.text((70, current_y), f"• Total Equipment: {len(equipment_df)}", fill="black", font=normal_font)

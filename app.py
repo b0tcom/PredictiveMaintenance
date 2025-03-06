@@ -10,6 +10,7 @@ from components.equipment_monitoring import show_equipment_monitoring
 from components.maintenance_alerts import show_maintenance_alerts
 from components.performance_metrics import show_performance_metrics
 from components.historical_analysis import show_historical_analysis
+from components.downloads import show_downloads
 
 # Import utilities
 from utils.data_generator import generate_sensor_data, generate_equipment_data
@@ -99,7 +100,8 @@ page = st.sidebar.radio("", [
     "Equipment Monitoring", 
     "Maintenance Alerts", 
     "Performance Metrics", 
-    "Historical Analysis"
+    "Historical Analysis",
+    "Downloads"
 ])
 
 # Update data button
@@ -218,6 +220,8 @@ elif page == "Performance Metrics":
     show_performance_metrics(processed_data, st.session_state.equipment_data)
 elif page == "Historical Analysis":
     show_historical_analysis(processed_data)
+elif page == "Downloads":
+    show_downloads(processed_data, st.session_state.equipment_data)
 
 # Footer
 st.markdown("---")

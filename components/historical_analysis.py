@@ -32,9 +32,12 @@ def show_historical_analysis(processed_data):
         min_date = sensor_data['timestamp'].min().date()
         max_date = sensor_data['timestamp'].max().date()
         
+        # Ensure default values are within valid range
+        default_start = max(min_date, max_date - timedelta(days=7))
+        
         date_range = st.date_input(
             "Select Date Range",
-            [max_date - timedelta(days=30), max_date],
+            [default_start, max_date],
             min_value=min_date,
             max_value=max_date
         )

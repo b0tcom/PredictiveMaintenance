@@ -123,6 +123,52 @@ st.sidebar.markdown(f"<p class='last-updated'>Last updated: {st.session_state.la
 # Process data (calculate anomalies, predictions, etc.)
 processed_data = process_sensor_data(st.session_state.sensor_data, st.session_state.equipment_data)
 
+# Add download button for full report at the top right corner
+col1, col2 = st.columns([10, 2])
+with col2:
+    # Create a function to generate report data
+    def generate_report():
+        # Combine all relevant data for the report
+        report = {
+            'equipment_data': st.session_state.equipment_data.to_dict(orient='records'),
+            'sensor_data': st.session_state.sensor_data.head(100).to_dict(orient='records'),  # Limited for performance
+            'anomalies': processed_data['anomalies'],
+            'predictions': processed_data['predictions'],
+            'recommendations': processed_data['recommendations'],
+            'statistics': processed_data['statistics'],
+            'report_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        return report
+
+    # Create CSV download button
+    def convert_to_csv():
+        # Get equipment data with predictions
+        equipment_df = st.session_state.equipment_data.copy()
+        
+        # Add prediction data
+        for idx, row in equipment_df.iterrows():
+            machine_id = row['machine_id']
+            if machine_id in processed_data['predictions']:
+                prediction = processed_data['predictions'][machine_id]
+                equipment_df.at[idx, 'failure_probability'] = f"{prediction['failure_probability'] * 100:.1f}%"
+                equipment_df.at[idx, 'days_to_failure'] = prediction['days_to_failure']
+                
+                if machine_id in processed_data['recommendations']:
+                    recommendation = processed_data['recommendations'][machine_id]
+                    equipment_df.at[idx, 'maintenance_urgency'] = recommendation['urgency']
+                    equipment_df.at[idx, 'recommendation'] = recommendation['message']
+                    
+        return equipment_df.to_csv(index=False)
+        
+    csv = convert_to_csv()
+    st.download_button(
+        label="📊 Download Report",
+        data=csv,
+        file_name=f"maintenance_report_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+        mime="text/csv",
+        help="Download a full report of equipment status, predictions, and recommendations"
+    )
+
 # Render selected page
 if page == "Dashboard Overview":
     show_dashboard(processed_data, st.session_state.equipment_data)

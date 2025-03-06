@@ -102,7 +102,7 @@ def process_sensor_data(sensor_data, equipment_data):
             'urgency': urgency,
             'message': message,
             'actions': actions,
-            'estimated_downtime': prediction['estimated_downtime_hours'],
+            'estimated_downtime_hours': prediction['estimated_downtime_hours'],
             'estimated_cost': prediction['estimated_cost']
         }
     

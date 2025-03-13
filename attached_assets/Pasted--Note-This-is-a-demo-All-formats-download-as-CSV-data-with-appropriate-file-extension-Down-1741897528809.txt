@@ -1,0 +1,98 @@
+
+Note: This is a demo. All formats download as CSV data with appropriate file extension.
+
+📥 Downloads and Reports
+This page allows you to download various reports and supporting evidence files for your predictive maintenance system. Select from the options below to generate the type of report or documentation you need.
+
+Maintenance Reports
+Report Type:
+
+
+Equipment Status Summary
+
+
+Maintenance Alerts
+
+
+Predictive Analysis
+
+
+Performance Metrics
+
+
+Complete System Report
+
+
+SR&ED Technical Documentation
+
+SR&ED Compliance Package
+This comprehensive documentation package adheres to CRA's Scientific Research & Experimental Development (SR&ED) guidelines and includes:
+
+Technical uncertainty documentation - Evidence of technological challenges beyond routine engineering
+Systematic investigation evidence - Documentation of methodical approach to problem-solving
+Experimental methodology details - Protocols and procedures used in research activities
+Research progression documentation - Timeline and evolution of experimental activities
+Technical advancement evidence - Quantifiable improvements and innovations achieved
+Version-controlled documentation - Traceable history of research activities
+What is SR&ED and why is this documentation important?
+
+
+Include Technical Areas:
+
+All Technical Areas
+Documentation Detail Level:
+
+Basic
+Expert
+Expert level includes detailed algorithm descriptions, full experimental datasets, statistical analysis methodology, and complete technical progression evidence - optimal for SR&ED audits.
+
+
+Current documentation version: 0.3.0 (3 revisions tracked)
+
+View Version History
+
+Format Options
+Select Format:
+
+pdf
+Time Period
+Select time period:
+
+
+Last 24 Hours
+
+
+Last Week
+
+
+Last Month
+
+
+Last Quarter
+
+
+Last Year
+
+
+Custom Range
+
+Generate Report
+Note: The SR&ED Technical Documentation package adheres to CRA's guidelines for Scientific Research & Experimental Development tax incentive claims. This report includes comprehensive technical documentation, experimental methods, and evidence of systematic investigation.
+
+TypeError: expected str, bytes or os.PathLike object, not BytesIO
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 593, in code_to_exec
+    exec(code, module.__dict__)
+File "/home/runner/workspace/app.py", line 224, in <module>
+    show_downloads(processed_data, st.session_state.equipment_data)
+File "/home/runner/workspace/components/downloads.py", line 1854, in show_downloads
+    report_data = generate_sred_documentation()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/components/downloads.py", line 1465, in generate_sred_documentation
+    pdf.output(pdf_buffer)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/fpdf/fpdf.py", line 1079, in output
+    f=open(name,'wb')
+      ^^^^^^^^^^^^^^^

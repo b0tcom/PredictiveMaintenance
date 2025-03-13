@@ -1461,10 +1461,8 @@ SR&ED activities were conducted from January 2024 through December 2024, involvi
                     pdf.multi_cell(140, height, component["value"], 1, "L")
                 
                 # Convert the PDF to bytes for the ZIP file
-                pdf_buffer = io.BytesIO()
-                pdf.output(pdf_buffer)
-                pdf_buffer.seek(0)
-                zipf.writestr('SR&ED_Technical_Report.pdf', pdf_buffer.getvalue())
+                pdf_content = pdf.output(dest='S').encode('latin1')
+                zipf.writestr('SR&ED_Technical_Report.pdf', pdf_content)
                 
                 # 2. Add CSV data exports in a data folder
                 csv_data = generate_csv()  # Get the CSV data ZIP

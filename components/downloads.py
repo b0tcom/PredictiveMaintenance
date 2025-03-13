@@ -463,8 +463,8 @@ def show_downloads(processed_data, equipment_data):
             if not metrics_data.empty:
                 avg_health = metrics_data['overall_health'].str.rstrip('%').astype(float).mean()
                 avg_oee = metrics_data['oee'].str.rstrip('%').astype(float).mean()
-                pdf.cell(0, 8, f"• Average Equipment Health: {avg_health:.1f}%", 0, 1)
-                pdf.cell(0, 8, f"• Average OEE: {avg_oee:.1f}%", 0, 1)
+                pdf.cell(0, 8, f"- Average Equipment Health: {avg_health:.1f}%", 0, 1)
+                pdf.cell(0, 8, f"- Average OEE: {avg_oee:.1f}%", 0, 1)
             
             # Equipment data
             pdf.ln(5)
@@ -513,7 +513,7 @@ def show_downloads(processed_data, equipment_data):
                 pdf.set_font("Arial", "", 10)
                 
                 for _, row in critical_machines.iterrows():
-                    pdf.cell(10, 8, "•", 0, 0)
+                    pdf.cell(10, 8, "-", 0, 0)
                     pdf.cell(0, 8, f"{row['machine_id']} ({row['machine_type']}): {row.get('recommendation', '')}", 0, 1)
             else:
                 pdf.set_font("Arial", "", 10)
@@ -532,7 +532,7 @@ def show_downloads(processed_data, equipment_data):
                     pdf.set_font("Arial", "", 10)
                     
                     for _, row in severe_anomalies.iterrows():
-                        pdf.cell(10, 8, "•", 0, 0)
+                        pdf.cell(10, 8, "-", 0, 0)
                         pdf.cell(0, 8, f"{row['machine_id']} - Score: {row['anomaly_score']}, Sensors: {row['affected_sensors']}", 0, 1)
                 else:
                     pdf.set_font("Arial", "", 10)

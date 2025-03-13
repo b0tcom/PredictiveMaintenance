@@ -454,10 +454,10 @@ def show_downloads(processed_data, equipment_data):
             
             # Add executive summary in bullet points
             pdf.set_font("Arial", "", 10)
-            pdf.cell(0, 8, f"• Total Equipment: {len(equipment_df)}", 0, 1)
-            pdf.cell(0, 8, f"• Critical Maintenance Alerts: {critical_count}", 0, 1)
-            pdf.cell(0, 8, f"• Warning Maintenance Alerts: {warning_count}", 0, 1)
-            pdf.cell(0, 8, f"• Detected Anomalies: {anomaly_count}", 0, 1)
+            pdf.cell(0, 8, f"- Total Equipment: {len(equipment_df)}", 0, 1)
+            pdf.cell(0, 8, f"- Critical Maintenance Alerts: {critical_count}", 0, 1)
+            pdf.cell(0, 8, f"- Warning Maintenance Alerts: {warning_count}", 0, 1)
+            pdf.cell(0, 8, f"- Detected Anomalies: {anomaly_count}", 0, 1)
             
             # Add key metrics if available
             if not metrics_data.empty:
@@ -1410,7 +1410,7 @@ SR&ED activities were conducted from January 2024 through December 2024, involvi
                 for uncertainty in uncertainties:
                     pdf.set_font("Arial", "B", 12)
                     pdf.set_xy(15, y_pos)
-                    pdf.cell(0, 8, f"• {uncertainty['title']}", 0, 1, "L")
+                    pdf.cell(0, 8, f"- {uncertainty['title']}", 0, 1, "L")
                     pdf.set_font("Arial", "", 11)
                     pdf.set_xy(20, y_pos + 8)
                     pdf.multi_cell(170, 6, uncertainty['desc'])

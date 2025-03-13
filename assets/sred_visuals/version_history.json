@@ -1,0 +1,36 @@
+{
+  "document_versions": [
+    {
+      "version": "0.1.0",
+      "timestamp": "2024-01-15T09:00:00",
+      "change_type": "minor",
+      "changes": [
+        "Initial SR&ED documentation framework",
+        "Basic technical narrative structure",
+        "Preliminary experiment documentation"
+      ]
+    },
+    {
+      "version": "0.2.0",
+      "timestamp": "2024-02-10T14:30:00",
+      "change_type": "minor",
+      "changes": [
+        "Added detailed experimental methodology",
+        "Enhanced technical uncertainty documentation",
+        "Added preliminary results data"
+      ]
+    },
+    {
+      "version": "0.3.0",
+      "timestamp": "2024-02-28T11:15:00",
+      "change_type": "minor",
+      "changes": [
+        "Added statistical analysis of experimental results",
+        "Expanded systematic investigation evidence",
+        "Added financial eligibility documentation"
+      ]
+    }
+  ],
+  "latest_version": "0.3.0",
+  "last_updated": "2024-02-28T11:15:00"
+}

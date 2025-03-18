@@ -222,7 +222,7 @@ with col2:
         report_data = generate_image()
     else:
         # Default to CSV if format not recognized
-        report_data = convert_to_csv()
+        report_data = generate_csv()
     
     st.download_button(
         label="📊 Download Report",

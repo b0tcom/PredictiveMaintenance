@@ -175,10 +175,6 @@ with col2:
         help="Select the format for your report download"
     )
     
-    # For demonstration, use CSV for all formats since we can't actually
-    # convert to all these formats without additional libraries
-    csv_data = convert_to_csv()
-    
     # Set appropriate mime types based on format
     mime_types = {
         'csv': "text/csv",
@@ -196,11 +192,41 @@ with col2:
         'xps': "application/oxps"
     }
     
-    # Note: In a real application, we would convert to the actual format
-    # For this demo, we'll just change the file extension but use CSV data
+    # Import necessary functions from downloads component to generate proper report data
+    from components.downloads import (
+        generate_csv, generate_txt, generate_pdf, generate_docx, generate_xlsx, generate_image,
+        _processed_data, _equipment_data, _report_type, _time_period
+    )
+    
+    # Update global variables in the downloads module with current data
+    import components.downloads
+    components.downloads._processed_data = processed_data
+    components.downloads._equipment_data = st.session_state.equipment_data
+    components.downloads._report_type = "Equipment Status Report"
+    components.downloads._time_period = "Last 7 Days"
+    
+    # Generate appropriate report data based on selected format
+    report_data = None
+    if selected_format == 'csv':
+        # Use the standardized generate_csv function from the downloads component
+        report_data = generate_csv()
+    elif selected_format == 'txt':
+        report_data = generate_txt()
+    elif selected_format in ['pdf', 'doc', 'rtf', 'xps']:
+        report_data = generate_pdf()
+    elif selected_format in ['docx']:
+        report_data = generate_docx()
+    elif selected_format in ['xls', 'xlsx']:
+        report_data = generate_xlsx()
+    elif selected_format in ['jpg', 'jpeg', 'tiff', 'tif']:
+        report_data = generate_image()
+    else:
+        # Default to CSV if format not recognized
+        report_data = convert_to_csv()
+    
     st.download_button(
         label="📊 Download Report",
-        data=csv_data,
+        data=report_data,
         file_name=f"maintenance_report_{datetime.now().strftime('%Y%m%d_%H%M')}.{selected_format}",
         mime=mime_types.get(selected_format, "text/csv"),
         help="Download a full report of equipment status, predictions, and recommendations"

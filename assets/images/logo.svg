@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="10" y="20" width="80" height="60" fill="#0A3D67" rx="8" ry="8"/>
+  
+  <!-- Machine/Factory Elements -->
+  <rect x="20" y="40" width="60" height="30" fill="#1259a1" rx="4" ry="4"/>
+  
+  <!-- Gear icon representing maintenance -->
+  <circle cx="50" cy="50" r="15" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="50" cy="50" r="8" fill="#0A3D67"/>
+  
+  <!-- Gear teeth -->
+  <rect x="47" y="30" width="6" height="8" fill="#FFFFFF"/>
+  <rect x="47" y="62" width="6" height="8" fill="#FFFFFF"/>
+  <rect x="30" y="47" width="8" height="6" fill="#FFFFFF"/>
+  <rect x="62" y="47" width="8" height="6" fill="#FFFFFF"/>
+  
+  <!-- Diagonal gear teeth -->
+  <rect x="35" y="35" width="6" height="8" fill="#FFFFFF" transform="rotate(45, 38, 39)"/>
+  <rect x="59" y="35" width="6" height="8" fill="#FFFFFF" transform="rotate(-45, 62, 39)"/>
+  <rect x="35" y="59" width="6" height="8" fill="#FFFFFF" transform="rotate(-45, 38, 63)"/>
+  <rect x="59" y="59" width="6" height="8" fill="#FFFFFF" transform="rotate(45, 62, 63)"/>
+  
+  <!-- AI/Data Visualization Element -->
+  <polyline points="25,75 35,65 45,72 55,62 65,68 75,58" stroke="#FFB81C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Graph points -->
+  <circle cx="25" cy="75" r="2" fill="#FFB81C"/>
+  <circle cx="35" cy="65" r="2" fill="#FFB81C"/>
+  <circle cx="45" cy="72" r="2" fill="#FFB81C"/>
+  <circle cx="55" cy="62" r="2" fill="#FFB81C"/>
+  <circle cx="65" cy="68" r="2" fill="#FFB81C"/>
+  <circle cx="75" cy="58" r="2" fill="#FFB81C"/>
+</svg>

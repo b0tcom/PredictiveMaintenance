@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+import os
 from datetime import datetime, timedelta
 
 # Import components
@@ -15,11 +16,14 @@ from components.downloads import show_downloads
 # Import utilities
 from utils.data_generator import generate_sensor_data, generate_equipment_data
 from utils.data_processor import process_sensor_data
+from utils.ui_helper import (load_css, render_logo, render_navbar_item, 
+                            display_premium_header, display_metric_card,
+                            display_alert_item, format_status_html)
 
 # Set page configuration
 st.set_page_config(
-    page_title="SmartMaintain - Predictive Maintenance Platform",
-    page_icon="🏭",
+    page_title="PredictMaint AI - Premium Predictive Maintenance Platform",
+    page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -37,90 +41,121 @@ if 'sensor_data' not in st.session_state:
 if 'equipment_data' not in st.session_state:
     st.session_state.equipment_data = generate_equipment_data(10)  # 10 machines
 
-# Custom CSS
-st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.5rem;
-        color: #0066cc;
-        margin-bottom: 0;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #666;
-        margin-top: 0;
-    }
-    .stMetric {
-        background-color: white;
-        padding: 15px;
-        border-radius: 5px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .warning {
-        color: orange;
-        font-weight: bold;
-    }
-    .critical {
-        color: red;
-        font-weight: bold;
-    }
-    .healthy {
-        color: green;
-        font-weight: bold;
-    }
-    .last-updated {
-        font-size: 0.8rem;
-        color: #666;
-        text-align: right;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Load premium UI theme CSS
+load_css()
 
-# App header with logo
+# App header with premium logo
 col1, col2 = st.columns([1, 5])
 with col1:
-    st.markdown("""
-    <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="30" width="80" height="50" fill="#0066cc" rx="5" ry="5"/>
-        <circle cx="30" cy="45" r="8" fill="white"/>
-        <circle cx="50" cy="45" r="8" fill="white"/>
-        <circle cx="70" cy="45" r="8" fill="white"/>
-        <rect x="20" y="65" width="60" height="8" fill="white" rx="2" ry="2"/>
-        <path d="M20,20 L30,10 L70,10 L80,20 L80,30 L20,30 Z" fill="#0066cc"/>
-    </svg>
-    """, unsafe_allow_html=True)
+    logo_file = os.path.join("assets", "images", "logo.svg")
+    if os.path.exists(logo_file):
+        with open(logo_file, "r") as f:
+            logo_svg = f.read()
+        st.markdown(f"""
+        <div style="margin-top: 10px;">
+            {logo_svg}
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.image("https://via.placeholder.com/80", width=80)
+        
 with col2:
-    st.markdown('<h1 class="main-header">SmartMaintain</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">AI-Driven Predictive Maintenance Platform</p>', unsafe_allow_html=True)
+    st.markdown('<h1 style="font-family: var(--font-display); font-size: 2.5rem; color: var(--primary-800); margin-bottom: 0;">PredictMaint AI</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 1.2rem; color: var(--neutral-600); margin-top: 0;">Premium AI-Driven Predictive Maintenance Platform</p>', unsafe_allow_html=True)
 
-# Sidebar navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("", [
-    "Dashboard Overview", 
-    "Equipment Monitoring", 
-    "Maintenance Alerts", 
-    "Performance Metrics", 
-    "Historical Analysis",
-    "Downloads"
-])
+# Sidebar navigation with premium UI
+st.sidebar.markdown("""
+<div style="background-color: var(--primary-900); padding: 16px; margin: -16px -16px 20px -16px; text-align: center;">
+    <h1 style="color: white; font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0;">PredictMaint AI</h1>
+    <p style="color: var(--primary-300); font-size: 0.8rem; margin-top: 4px;">PREMIUM EDITION</p>
+</div>
+<div class="nav-group">
+    <div class="nav-group-title">MAIN NAVIGATION</div>
+</div>
+""", unsafe_allow_html=True)
 
-# Update data button
-if st.sidebar.button("Refresh Data"):
-    # Generate new data points
-    end_time = datetime.now()
-    new_data = generate_sensor_data(st.session_state.last_update, end_time, interval_minutes=1)
-    st.session_state.sensor_data = pd.concat([st.session_state.sensor_data, new_data]).reset_index(drop=True)
-    
-    # Update equipment status based on new data
-    st.session_state.equipment_data = generate_equipment_data(10, previous_data=st.session_state.equipment_data)
-    
-    # Update last update time
-    st.session_state.last_update = end_time
-    
-    st.sidebar.success("Data refreshed successfully!")
+# Create the navigation options with icons
+navigation_options = {
+    "Dashboard Overview": "dashboard",
+    "Equipment Monitoring": "equipment",
+    "Maintenance Alerts": "alerts",
+    "Performance Metrics": "metrics",
+    "Historical Analysis": "history",
+    "Downloads": "downloads"
+}
 
-# Display last update time
-st.sidebar.markdown(f"<p class='last-updated'>Last updated: {st.session_state.last_update.strftime('%Y-%m-%d %H:%M:%S')}</p>", unsafe_allow_html=True)
+# Display navigation icons and labels
+page = st.sidebar.radio("", list(navigation_options.keys()), label_visibility="collapsed")
+
+# Display the selected page with premium styling
+st.sidebar.markdown("""
+<style>
+    div.row-widget.stRadio > div[role="radiogroup"] > label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    div.row-widget.stRadio > div[role="radiogroup"] > label:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child {
+        background-color: var(--primary-100);
+    }
+    div.row-widget.stRadio > div[role="radiogroup"] > label[aria-checked="true"] {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-left: 3px solid var(--amber-500);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Add sidebar separator
+st.sidebar.markdown("""
+<div style="margin: 20px 0; border-top: 1px solid var(--primary-600); opacity: 0.3;"></div>
+<div class="nav-group">
+    <div class="nav-group-title">ACTIONS</div>
+</div>
+""", unsafe_allow_html=True)
+
+# Update data button with premium styling
+refresh_button = st.sidebar.button(
+    "🔄 Refresh Data", 
+    help="Update sensor data and equipment status with the latest readings"
+)
+
+if refresh_button:
+    # Show a spinner during data refresh
+    with st.sidebar.spinner("Refreshing data..."):
+        # Generate new data points
+        end_time = datetime.now()
+        new_data = generate_sensor_data(st.session_state.last_update, end_time, interval_minutes=1)
+        st.session_state.sensor_data = pd.concat([st.session_state.sensor_data, new_data]).reset_index(drop=True)
+        
+        # Update equipment status based on new data
+        st.session_state.equipment_data = generate_equipment_data(10, previous_data=st.session_state.equipment_data)
+        
+        # Update last update time
+        st.session_state.last_update = end_time
+        
+        # Success message with premium styling
+        st.sidebar.markdown("""
+        <div style="background-color: var(--success); color: white; padding: 10px; border-radius: 4px; margin-top: 10px;">
+            <strong>✅ Data refreshed successfully!</strong>
+        </div>
+        """, unsafe_allow_html=True)
+
+# Display last update time with premium styling
+st.sidebar.markdown(f"""
+<div style="margin-top: 20px; padding: 10px; background-color: var(--primary-900); border-radius: 4px; text-align: center;">
+    <div style="font-size: 0.7rem; color: var(--primary-300); margin-bottom: 4px;">LAST UPDATED</div>
+    <div style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--neutral-100);">
+        {st.session_state.last_update.strftime('%Y-%m-%d %H:%M:%S')}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Process data (calculate anomalies, predictions, etc.)
 processed_data = process_sensor_data(st.session_state.sensor_data, st.session_state.equipment_data)
@@ -249,13 +284,30 @@ elif page == "Historical Analysis":
 elif page == "Downloads":
     show_downloads(processed_data, st.session_state.equipment_data)
 
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        © 2023 SmartMaintain | AI-Driven Predictive Maintenance Platform for Smart Manufacturing
+# Premium Footer with enhanced styling
+st.markdown("""
+<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--neutral-300);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h3 style="font-family: var(--font-display); color: var(--primary-800); margin: 0; font-size: 1.2rem;">PredictMaint AI</h3>
+            <p style="color: var(--neutral-600); margin: 5px 0 0 0; font-size: 0.8rem;">Premium AI-Driven Predictive Maintenance Platform</p>
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <span style="color: var(--primary-600); cursor: pointer;">Documentation</span>
+            <span style="color: var(--primary-600); cursor: pointer;">Support</span>
+            <span style="color: var(--primary-600); cursor: pointer;">API</span>
+            <span style="color: var(--primary-600); cursor: pointer;">Contact</span>
+        </div>
     </div>
-    """, 
-    unsafe_allow_html=True
-)
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <div style="color: var(--neutral-500); font-size: 0.75rem;">
+            © 2025 PredictMaint AI | All Rights Reserved
+        </div>
+        <div style="color: var(--neutral-500); font-size: 0.75rem; display: flex; gap: 10px;">
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
+            <span>Version 2.4.1 Premium</span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
